@@ -6,7 +6,7 @@ import os
 from utils import download_model_from_gdrive
 
 # --- Konfigurasi Model ---
-model_path = 'efficientnetv2_rempahindo.keras'
+model_path = 'models/efficientnetv2_rempahindo.keras'
 file_id = '16mspKSZnXI3x2ENrW_FmOmei5Y_u0Z_8'
 
 # --- Load model dengan cache + error handler ---
