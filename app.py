@@ -60,22 +60,33 @@ with st.container():
     # Menggunakan kolom dengan rasio 1:2:1 agar lebih simetris
     col1, col2, col3 = st.columns([1, 2, 1])
     with col1:
-        st.image("img/spiceleft.png", width=100)  # Gambar di kiri diperkecil
+        # Cek apakah file gambar tersedia, jika tidak tampilkan peringatan
+        if os.path.exists("img/spiceleft.png"):
+            st.image("img/spiceleft.png", width=100)  # Gambar di kiri diperkecil
+        else:
+            st.warning("Gambar 'spiceleft.png' tidak ditemukan!")
     with col2:
         st.markdown("<h1 style='text-align: center;'>Aplikasi Prediksi Rempah Indonesia</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #444;'>Sistem deteksi dan pengenalan rempah berbasis deep learning</p>", unsafe_allow_html=True)
     with col3:
-        st.image("img/spiceright.png", width=100)  # Gambar di kanan diperkecil
+        if os.path.exists("img/spiceright.png"):
+            st.image("img/spiceright.png", width=100)  # Gambar di kanan diperkecil
+        else:
+            st.warning("Gambar 'spiceright.png' tidak ditemukan!")
 
 # --- Load Model ---
 model_path = r'models/efficientnetv2_rempahindo.keras'
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def load_model_local(path):
+    st.write("✅ Checkpoint: Mulai memuat model...")
     if not os.path.exists(path):
-        st.error(f"❌ File model tidak ditemukan di {path}")
+        st.error(f"❌ File model tidak ditemukan di: {path}")
         st.stop()
     try:
-        return tf.keras.models.load_model(path)
+        with st.spinner("Memuat model..."):
+            model = tf.keras.models.load_model(path)
+        st.write("✅ Model berhasil dimuat!")
+        return model
     except Exception as e:
         st.error(f"❌ Gagal memuat model: {e}")
         st.stop()
@@ -93,6 +104,7 @@ class_names = [
 
 # --- Fungsi untuk Preprocessing Gambar & Prediksi ---
 def process_image(source):
+    st.write("✅ Checkpoint: Mulai proses gambar...")
     try:
         image = Image.open(source)
     except Exception:
@@ -106,16 +118,23 @@ def process_image(source):
     elif img_array.shape[-1] == 4:  # jika ada channel alpha
         img_array = img_array[..., :3]
     img_array = tf.keras.applications.efficientnet_v2.preprocess_input(img_array)
+    st.write("✅ Checkpoint: Proses gambar selesai.")
     return np.expand_dims(img_array, axis=0)
 
 def predict_and_display(img_array):
-    preds = model.predict(img_array)
+    st.write("✅ Checkpoint: Mulai prediksi...")
+    try:
+        preds = model.predict(img_array)
+    except Exception as e:
+        st.error(f"⚠️ Gagal melakukan prediksi: {e}")
+        st.stop()
     top_index = np.argmax(preds[0])
     st.success(f"🔍 Prediksi: **{class_names[top_index]}** dengan confidence **{preds[0][top_index]:.2f}**")
     st.markdown("### 🔍 Top-3 Kelas:")
     sorted_indices = np.argsort(preds[0])[::-1][:3]
     for idx in sorted_indices:
         st.write(f"- {class_names[idx]}: {preds[0][idx]:.2f}")
+    st.write("✅ Checkpoint: Prediksi selesai.")
 
 # --- Konten Utama Berdasarkan Navigasi ---
 if pilihan == "Halaman Utama":
@@ -138,7 +157,6 @@ if pilihan == "Halaman Utama":
     st.image("https://assets.corteva.com/is/image/Corteva/ar2-17mar20?$image_desktop$",
              caption="Berbagai Rempah Khas Indonesia", use_column_width=True)
 
-    
 elif pilihan == "Upload Gambar":
     st.header("Deteksi Rempah – Upload Gambar")
     st.markdown("Silakan unggah gambar rempah dalam format **jpg**, **jpeg**, atau **png**.")
