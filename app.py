@@ -75,7 +75,10 @@ with st.container():
             st.warning("Gambar 'spiceright.png' tidak ditemukan!")
 
 # --- Load Model ---
+import time
+
 model_path = r'models/efficientnetv2_rempahindo.keras'
+
 @st.cache_resource(show_spinner=False)
 def load_model_local(path):
     st.write("✅ Checkpoint: Mulai memuat model...")
@@ -83,15 +86,18 @@ def load_model_local(path):
         st.error(f"❌ File model tidak ditemukan di: {path}")
         st.stop()
     try:
+        start = time.time()
         with st.spinner("Memuat model..."):
             model = tf.keras.models.load_model(path)
-        st.write("✅ Model berhasil dimuat!")
+        elapsed = time.time() - start
+        st.write(f"✅ Model berhasil dimuat dalam {elapsed:.2f} detik!")
         return model
     except Exception as e:
         st.error(f"❌ Gagal memuat model: {e}")
         st.stop()
 
 model = load_model_local(model_path)
+
 
 # --- Daftar Kelas Rempah ---
 class_names = [
